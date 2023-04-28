@@ -1,0 +1,27 @@
+body {
+  font-family: sans-serif;
+}
+
+#grid {
+  display: inline-block;
+  width: 200px;
+  height: 200px;
+}
+
+#grid .row {
+  display: flex;
+}
+
+#grid .cell {
+  width: 20px;
+  height: 20px;
+  border: 1px solid black;
+}
+
+#grid .cell.on {
+  background-color: black;
+}
+
+#nonogram {
+  display: inline-block;
+}

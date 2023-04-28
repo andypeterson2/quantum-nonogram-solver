@@ -1,0 +1,108 @@
+<!-- <html>
+<head>
+    <title>Nonogram</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+<body>
+    <h1>Nonogram</h1>
+    <div id="container">
+        <div id="grid-and-row-clues">
+            <table id="grid">
+            {% for row in grid %}
+            <tr>
+                {% for cell in row %}
+                <td class="{{ cell }}"></td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+        </div>
+    </div>
+</body>
+</html>
+ -->
+<html>
+<head>
+    <title>Nonogram</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+<body>
+    <h1>Nonogram</h1>
+    <div id="container">
+        <div id="grid-and-row-clues">
+            <table id="grid">
+                <!-- Add a row for the top clues -->
+                <tr>
+                    <!-- Add an empty cell for the top left corner -->
+                    <th></th>
+                    <!-- Loop through the column clues and add cells with colspan and line breaks -->
+                    {% for clue in col_clues %}
+                    <th colspan="2">{{ clue|join("<br>")|safe }}</th>
+                    {% endfor %}
+                </tr>
+                <!-- Loop through the grid and row clues -->
+                {% for i in range(grid|length) %}
+                <tr>
+                    <!-- Add a cell for the left clue with rowspan -->
+                    <th rowspan="2">{{ row_clues[i]|join(" ") }}</th>
+                    <!-- Loop through the grid row and add cells with class names -->
+                    {% for j in range(grid[i]|length) %}
+                    <td class="{% if grid[i][j] == 0 %}empty{% elif grid[i][j] == 1 %}filled{% elif grid[i][j] == 2 %}crossed{% endif %}"></td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</body>
+</html> -
+
+
+<!-- <script>
+    // Define a function to update the grid and clues
+    function updateGridAndClues(puzzle) {
+        // Get the grid element from the HTML document
+        var grid = document.getElementById("grid");
+        // Get the row and column clues from the puzzle object
+        var rowClues = puzzle.row_clues;
+        var colClues = puzzle.col_clues;
+        // Loop through the rows of the grid
+        for (var i = 0; i < grid.rows.length; i++) {
+            // Get the current row element
+            var row = grid.rows[i];
+            // Loop through the cells of the row
+            for (var j = 0; j < row.cells.length; j++) {
+                // Get the current cell element
+                var cell = row.cells[j];
+                // If the cell is a table header, update its text content with the clue
+                if (cell.tagName == "TH") {
+                    // If it is the first row, use the column clues
+                    if (i == 0) {
+                        cell.textContent = colClues[j-1];
+                    }
+                    // If it is not the first row, use the row clues
+                    else {
+                        cell.textContent = rowClues[i-1];
+                    }
+                }
+                // If the cell is a table data, update its class name with the grid value
+                else {
+                    // Get the grid value from the puzzle object
+                    var gridValue = puzzle.grid[i-1][j-1];
+                    // Set the class name of the cell according to the grid value
+                    if (gridValue == 0) {
+                        cell.className = "empty";
+                    }
+                    else if (gridValue == 1) {
+                        cell.className = "filled";
+                    }
+                    else if (gridValue == 2) {
+                        cell.className = "crossed";
+                    }
+                }
+            }
+        }
+    }
+</script> -->

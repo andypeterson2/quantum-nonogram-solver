@@ -1,0 +1,95 @@
+/* style.css */
+
+/* Define some colors as variables */
+:root {
+  --black: #000000;
+  --white: #ffffff;
+  --gray: #cccccc;
+  --blue: #00a0ff;
+}
+
+/* Style the body element */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Style the h1 element */
+h1 {
+  text-align: center;
+  color: var(--blue);
+}
+
+/* Style the container element */
+#container {
+  display: flex;
+  flex-direction: column;
+/*   justify-content: center;
+  align-items: center; */
+}
+
+/* Style the grid element */
+#grid {
+  border-collapse: collapse;
+}
+
+/* Style the grid cells */
+#grid td {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--gray);
+}
+
+/* Style the filled cells */
+.filled {
+  background-color: var(--black);
+}
+
+/* Style the marked cells */
+.marked {
+  background-color: var(--white);
+}
+
+/* Style the row clues element */
+#row-clues {
+  margin-right: 10px;
+  margin-left: -1px; /* To align with the grid border */
+}
+
+/* Style the row clues cells */
+#row-clues td {
+  width: 40px;
+  height: 20px;
+  text-align: right;
+}
+
+/* Style the col clues element */
+#col-clues {
+  margin-bottom: 10px;
+  margin-top: -1px; /* To align with the grid border */
+}
+
+/* Style the col clues cells */
+#col-clues td {
+  width: 20px;
+  height: 40px;
+  text-align: center;
+}
+
+/* Style the buttons */
+button {
+  margin: 10px;
+}
+
+/* Style the message element */
+#message {
+  text-align: center;
+}
+
+#grid-and-row-clues {
+    display: flex;
+}
+
+
+
