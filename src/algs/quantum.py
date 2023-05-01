@@ -89,8 +89,20 @@ class Quantum(Algorithm):
         num_solutions = 1
         return math.ceil(math.pi/4 * math.sqrt(2**(nonogram.rows*nonogram.columns)/num_solutions))
 
-    def solve(self, nonogram: Nonogram):
-        circuit = self.make_solver(nonogram)
+    def prep(self, nonogram: Nonogram):
+        expression = self.to_boolean_expression(nonogram)
+        oracle = PhaseOracle(expression)
+        problem = AmplificationProblem(oracle=oracle)
+        algorithm = Grover(iterations=self.get_num_iterations(nonogram))
+        circuit = algorithm.construct_circuit(problem)
+        circuit.measure_all()
+        return circuit
+    
+    def solve(self, data):
+        if type(data) == Nonogram:
+            circuit = self.make_solver(nonogram)
+        else:
+            circuit = data
         backend = Aer.get_backend('aer_simulator')  
         job = execute(circuit, backend, shots=1024)
         result = job.result()
@@ -101,12 +113,3 @@ class Quantum(Algorithm):
         for res in top:
             return red
     
-    # TODO: make a "prep" function that isn't involved in timing to set up this
-    def make_solver(self, nonogram: Nonogram):
-        expression = self.to_boolean_expression(nonogram)
-        oracle = PhaseOracle(expression)
-        problem = AmplificationProblem(oracle=oracle)
-        algorithm = Grover(iterations=self.get_num_iterations(nonogram))
-        circuit = algorithm.construct_circuit(problem)
-        circuit.measure_all()
-        return circuit
