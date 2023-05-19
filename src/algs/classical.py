@@ -1,3 +1,6 @@
+from .algorithm import Algorithm
+from ..nonogram import Nonogram
+import numpy as np
 class Classical(Algorithm):
     """Classical algorithm for solving nonograms."""
     
