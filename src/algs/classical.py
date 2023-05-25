@@ -1,3 +1,6 @@
+from .algorithm import Algorithm
+from src.models.nonogram import NonogramPuzzle
+import numpy as np
 class Classical(Algorithm):
     """Classical algorithm for solving nonograms."""
     
@@ -5,15 +8,15 @@ class Classical(Algorithm):
         """Setup the classical algorithm with the given data.
         
         Args:
-            data (Nonogram): The nonogram to setup the algorithm with.
+            data (NonogramPuzzle): The nonogram to setup the algorithm with.
         """
         pass
     
-    def solve(self, data: Nonogram):
+    def solve(self, data: NonogramPuzzle):
         """Solve the given nonogram using a classical algorithm.
         
         Args:
-            data (Nonogram): The nonogram to solve.
+            data (NonogramPuzzle): The nonogram to solve.
         
         Returns:
             List[np.ndarray]: A list of all valid solutions to the nonogram.
@@ -40,11 +43,11 @@ class Classical(Algorithm):
         # Return all valid solutions
         return solutions
     
-    def is_valid_solution(self, data: Nonogram, board: np.ndarray):
+    def is_valid_solution(self, data: NonogramPuzzle, board: np.ndarray):
         """Check if the given solution is valid according to the constraints of the nonogram.
         
         Args:
-            data (Nonogram): The nonogram to check against.
+            data (NonogramPuzzle): The nonogram to check against.
             board (np.ndarray): The solution to check.
         
         Returns:

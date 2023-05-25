@@ -1,8 +1,7 @@
 from .algorithm import Algorithm
-from ..nonogram import Nonogram
+from src.models.nonogram import NonogramPuzzle
 from qiskit import IBMQ, Aer, assemble, transpile, QuantumCircuit, ClassicalRegister, QuantumRegister, execute
 from qiskit.quantum_info.operators import Operator
-from qiskit.providers.ibmq import least_busy
 from qiskit.visualization import plot_histogram
 from qiskit.circuit.library import PhaseOracle
 from qiskit.algorithms import Grover, AmplificationProblem
@@ -51,7 +50,7 @@ class Quantum(Algorithm):
         "5/1;1;1;" : [0b10101],
     }
     
-    def to_boolean_expression(self, nonogram: Nonogram):
+    def to_boolean_expression(self, nonogram: NonogramPuzzle):
         boolean_statement = ""
 
         for row_idx, row_constraint in enumerate(nonogram.row_constraints):
@@ -84,12 +83,12 @@ class Quantum(Algorithm):
         # remove trailing "&" before returning
         return boolean_statement[:-1]
     
-    def get_num_iterations(self, nonogram: Nonogram):
+    def get_num_iterations(self, nonogram: NonogramPuzzle):
         # TODO: Fix assumption that num_solutions = 1
         num_solutions = 1
         return math.ceil(math.pi/4 * math.sqrt(2**(nonogram.rows*nonogram.columns)/num_solutions))
 
-    def prep(self, nonogram: Nonogram):
+    def setup(self, nonogram: NonogramPuzzle):
         expression = self.to_boolean_expression(nonogram)
         oracle = PhaseOracle(expression)
         problem = AmplificationProblem(oracle=oracle)
@@ -99,7 +98,7 @@ class Quantum(Algorithm):
         return circuit
     
     def solve(self, data):
-        if type(data) == Nonogram:
+        if type(data) == NonogramPuzzle:
             circuit = self.make_solver(nonogram)
         else:
             circuit = data
