@@ -7,9 +7,7 @@ from qiskit.circuit.library import PhaseOracle
 from qiskit.algorithms import Grover, AmplificationProblem
 import math
 class Quantum(Algorithm):
-    def prep(nonogram: Nonogram):
-        def to_boolean_expression(nonogram: Nonogram):
-            possible_d = {
+    possible_d = {
                 # l = 1
                 "1/0;" : [0b0],
                 "1/1;" : [0b1],
@@ -50,63 +48,65 @@ class Quantum(Algorithm):
                 "5/3;1;" : [0b11101],
                 "5/1;1;1;" : [0b10101],
             }
-            boolean_statement = ""
-
-            for row_idx, row_constraint in enumerate(nonogram.row_constraints):
-                bit_strings = possible_d[f"{nonogram.rows}/{';'.join(map(str, row_constraint))};"]
-                clauses = []
-                for bitstring_idx, bitstring in enumerate(bit_strings):
-                    clause = ""
-                    for column_idx in range(nonogram.columns):
-                        if bitstring & (1 << column_idx):
-                            clause += f'v{nonogram.grid_positions[row_idx][column_idx]}&'
-                        else:
-                            clause += f'~v{nonogram.grid_positions[row_idx][column_idx]}&'
-                    clauses.append("(" + clause[:-1] + ")")
-                boolean_statement += "(" + "|".join(clauses) + ")&"
-
-         # iterate over column constraints (same as with row constraints, but with transposed variables)
-            for column_idx, column_constraint in enumerate(nonogram.column_constraints):
-                bitstrings = possible_d[f"{nonogram.columns}/{';'.join(map(str, column_constraint))};"]
-                clauses = []
-                for bitstring_idx, bitstring in enumerate(bitstrings):
-                    clause = ""
-                    for row_idx in range(nonogram.rows):
-                        if bitstring & (1 << row_idx):
-                            clause += f"v{nonogram.grid_positions[row_idx][column_idx]}&"
-                        else:
-                            clause += f"~v{nonogram.grid_positions[row_idx][column_idx]}&"
-                    clauses.append("(" + clause[:-1] + ")")
-                boolean_statement += "(" + "|".join(clauses) + ")&"
-            # remove trailing "&" before returning
-            return boolean_statement[:-1]
-        def get_num_iterations(nonogram: Nonogram):
-            # TODO: Fix assumption that num_solutions = 1
-            num_solutions = 1
-            return math.ceil(math.pi/4 * math.sqrt(2**(nonogram.rows*nonogram.columns)/num_solutions))
-
-        expression = to_boolean_expression(nonogram)
+    
+    def __init__(self, nonogram: NonogramPuzzle):
+        self.nonogram = nonogram
+        # TODO: Fix assumption that num_solutions = 1
+        self.num_solutions = 1
+        self.iterations = math.ceil(math.pi/4 * math.sqrt(2**(nonogram.rows*nonogram.columns)/self.num_solutions))
+        expression = self.to_boolean_expression()
         oracle = PhaseOracle(expression)
         problem = AmplificationProblem(oracle=oracle)
-        algorithm = Grover(iterations=get_num_iterations(nonogram))
-        circuit = algorithm.construct_circuit(problem)
-        circuit.measure_all()
-        return circuit
+        algorithm = Grover(iterations=self.iterations)
+        self.circuit = algorithm.construct_circuit(problem)
+        self.circuit.measure_all()
 
-    def solve(self, data):
-        if type(data) == NonogramPuzzle:
-            circuit = self.make_solver(nonogram)
-        else:
-            circuit = data
+    def solve(self, useGPU):
         backend = Aer.get_backend('aer_simulator')
         if useGPU:
             backend.set_options(device='GPU')
-        job = execute(circuit, backend, shots=1024)
+        job = execute(self.circuit, backend, shots=1024)
         result = job.result()
-        sorted_counts = dict(sorted(result.get_counts(circuit).items(), key= lambda item: item[1], reverse = True))
+        sorted_counts = dict(sorted(result.get_counts(self.circuit).items(), key= lambda item: item[1], reverse = True))
         top = dict(list(sorted_counts.items())[:1])
         top_three = dict(list(sorted_counts.items())[:3])
         
+        # TODO: Monkeypatch, to be fixed 
         for res in top:
-            return red
-    
+            return res
+        
+    def to_boolean_expression(self):
+        # TODO: handle cases with a 0 clue
+        boolean_statement = ""
+
+        # iterate over row constraints
+        for row_idx, row in enumerate(self.nonogram.cells):
+            bit_strings = self.possible_d[f"{self.nonogram.columns}/{';'.join(map(str, self.nonogram.row_clues[row_idx]))};"]
+            clauses = []
+            for bitstring in bit_strings:
+                clause = ""
+                for column_idx, cell in enumerate(row):
+                    if bitstring & (1 << column_idx):
+                        clause += f'v{cell.id}&'
+                    else:
+                        clause += f'~v{cell.id}&'
+                clauses.append("(" + clause[:-1] + ")")
+            boolean_statement += "(" + "|".join(clauses) + ")&"
+
+        # iterate over column constraints
+        for column_idx in range(self.nonogram.columns):
+            bit_strings = self.possible_d[f"{self.nonogram.rows}/{';'.join(map(str, self.nonogram.column_clues[column_idx]))};"]
+            clauses = []
+            for bitstring in bit_strings:
+                clause = ""
+                for row_idx, row in enumerate(self.nonogram.cells):
+                    cell = row[column_idx]
+                    if bitstring & (1 << row_idx):
+                        clause += f'v{cell.id}&'
+                    else:
+                        clause += f'~v{cell.id}&'
+                clauses.append("(" + clause[:-1] + ")")
+            boolean_statement += "(" + "|".join(clauses) + ")&"
+
+        # remove trailing "&" before returning
+        return boolean_statement[:-1]

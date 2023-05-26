@@ -4,7 +4,7 @@ import numpy as np
 class Classical(Algorithm):
     """Classical algorithm for solving nonograms."""
     
-    def setup(self, data):
+    def __init__(self, data):
         """Setup the classical algorithm with the given data.
         
         Args:

@@ -1,9 +1,10 @@
 from src.models.observer import Observer
 
 class Cell:
-    def __init__(self):
+    def __init__(self, state = False):
+        self.id = None
         self.observers = []
-        self.state = False
+        self.state = state
 
     def add_observer(self, observer: Observer):
         if not isinstance(observer, Observer):
@@ -17,4 +18,7 @@ class Cell:
     def notify_observers(self):
         for observer in self.observers:
             observer.update(self)
+            
+    def __repr__(self):
+        return self.state
             
