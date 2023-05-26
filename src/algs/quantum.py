@@ -35,27 +35,6 @@ class Quantum(Algorithm):
                 "4/1;1;" : [0b1010,0b0101,0b1001],
                 "4/2;1;" : [0b1101],
                 "4/1;2;" : [0b1011],
-
-# <<<<<<< HEAD
-#         # l = 5
-#         "5/0;" : [0b00000],
-#         "5/1;" : [0b10000,0b01000,0b00100,0b00010,0b00001],
-#         "5/2;" : [0b11000,0b01100,0b00110, 0b00011],
-#         "5/3;" : [0b11100,0b01110,0b00111],
-#         "5/4;" : [0b11110,0b01111],
-#         "5/5;" : [0b11111],
-#         "5/1;1;" : [0b10100,0b10010,0b10001,0b01010,0b01001,0b00101],
-#         "5/1;2;" : [0b10011,0b10110,0b01011],
-#         "5/1;3;" : [0b10111],
-#         "5/2;1;" : [0b11001,0b11010,0b01101,],
-#         "5/2;2;" : [0b11011],
-#         "5/3;1;" : [0b11101],
-#         "5/1;1;1;" : [0b10101],
-#     }
-    
-#     def to_boolean_expression(self, nonogram: NonogramPuzzle):
-#         boolean_statement = ""
-# =======
                 # l = 5
                 "5/0;" : [0b00000],
                 "5/1;" : [0b10000,0b01000,0b00100,0b00010,0b00001],
@@ -99,19 +78,6 @@ class Quantum(Algorithm):
                             clause += f"~v{nonogram.grid_positions[row_idx][column_idx]}&"
                     clauses.append("(" + clause[:-1] + ")")
                 boolean_statement += "(" + "|".join(clauses) + ")&"
-
-# <<<<<<< HEAD
-#         # remove trailing "&" before returning
-#         return boolean_statement[:-1]
-    
-#     def get_num_iterations(self, nonogram: NonogramPuzzle):
-#         # TODO: Fix assumption that num_solutions = 1
-#         num_solutions = 1
-#         return math.ceil(math.pi/4 * math.sqrt(2**(nonogram.rows*nonogram.columns)/num_solutions))
-
-#     def setup(self, nonogram: NonogramPuzzle):
-#         expression = self.to_boolean_expression(nonogram)
-# =======
             # remove trailing "&" before returning
             return boolean_statement[:-1]
         def get_num_iterations(nonogram: Nonogram):

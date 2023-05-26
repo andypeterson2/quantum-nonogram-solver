@@ -59,3 +59,39 @@
     
 #     # Print the runtime of the algorithm
 #     print(f"Runtime: {runtime:.6f} seconds")
+import unittest
+from src.models.nonogram import NonogramPuzzle
+from src.solver.algorithm import Algorithm, ClassicalSolver
+
+class TestAlgorithm(unittest.TestCase):
+    def setUp(self):
+        self.algorithm = Algorithm()
+
+    def test_abstract_methods(self):
+        with self.assertRaises(NotImplementedError):
+            self.algorithm.setup(None)
+
+        with self.assertRaises(NotImplementedError):
+            self.algorithm.solve(None)
+
+
+class TestClassicalSolver(unittest.TestCase):
+    def setUp(self):
+        self.solver = ClassicalSolver()
+        # Prepare a simple 2x2 NonogramPuzzle for testing
+        cells = [False, True, True, False]
+        rows = 2
+        columns = 2
+        row_clues = [[1], [1]]
+        col_clues = [[1], [1]]
+        self.nonogram = NonogramPuzzle(cells, rows, columns, row_clues, col_clues)
+
+    def test_setup(self):
+        self.solver.setup(self.nonogram)
+        # Test if the solver correctly set up the nonogram puzzle
+        self.assertEqual(self.solver.data, self.nonogram)
+
+    def test_solve(self):
+        # Test if the solver returns the correct solution
+        expected_solution = [[False, True], [True, False]]
+        self.assertEqual(self.solver.solve(self.nonogram), expected_solution)

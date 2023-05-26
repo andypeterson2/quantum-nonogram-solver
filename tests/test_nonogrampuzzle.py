@@ -42,3 +42,28 @@ class TestNonogramPuzzle(unittest.TestCase):
             self.puzzle.cells[i * 5 + i].set_state(True)
 
         self.assertTrue(self.puzzle.validate_solution())
+    def test_creation_from_cells(self):
+        cells = [[True, False], [False, True]]
+        puzzle = NonogramPuzzle(cells=cells)
+        self.assertEqual(puzzle.row_clues, [[1], [1]])
+        self.assertEqual(puzzle.column_clues, [[1], [1]])
+
+    def test_creation_from_random(self):
+        puzzle = NonogramPuzzle(rows=3, columns=4)
+        self.assertEqual(puzzle.rows, 3)
+        self.assertEqual(puzzle.columns, 4)
+
+    def test_creation_from_clues(self):
+        row_clues = [[1, 1], [2]]
+        column_clues = [[1], [1, 1]]
+        puzzle = NonogramPuzzle(row_clues=row_clues, column_clues=column_clues)
+        self.assertEqual(puzzle.row_clues, row_clues)
+        self.assertEqual(puzzle.column_clues, column_clues)
+
+    def test_proposing_and_validating_solution(self):
+        cells = [[True, False], [False, True]]
+        puzzle = NonogramPuzzle(cells=cells)
+        puzzle.propose_solution([[True, False], [False, True]])
+        self.assertTrue(puzzle.validate_solution())
+        puzzle.propose_solution([[False, True], [True, False]])
+        self.assertFalse(puzzle.validate_solution())

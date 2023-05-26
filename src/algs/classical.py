@@ -10,9 +10,9 @@ class Classical(Algorithm):
         Args:
             data (NonogramPuzzle): The nonogram to setup the algorithm with.
         """
-        pass
+        self.data = data
     
-    def solve(self, data: NonogramPuzzle):
+    def solve(self, all_solutions=True):
         """Solve the given nonogram using a classical algorithm.
         
         Args:
@@ -22,8 +22,7 @@ class Classical(Algorithm):
             List[np.ndarray]: A list of all valid solutions to the nonogram.
         """
         # Get the number of rows and columns in the nonogram
-        rows = data.rows
-        columns = data.columns
+        rows, columns = self.data.size
         
         # Create a list to store all possible solutions
         solutions = []
@@ -37,8 +36,12 @@ class Classical(Algorithm):
             board = np.array([int(b) for b in binary]).reshape((rows, columns))
             
             # Check if the current combination is a valid solution
-            if self.is_valid_solution(data, board):
+            if self.data.validate_solution(board):
                 solutions.append(board)
+                
+                # Exit on first found solution if requested
+                if not all_solutions:
+                    break
         
         # Return all valid solutions
         return solutions
