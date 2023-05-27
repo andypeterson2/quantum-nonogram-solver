@@ -6,49 +6,47 @@ from qiskit.visualization import plot_histogram
 from qiskit.circuit.library import PhaseOracle
 from qiskit.algorithms import Grover, AmplificationProblem
 import math
+from functools import lru_cache
+
 class Quantum(Algorithm):
-    possible_d = {
-                # l = 1
-                "1/0;" : [0b0],
-                "1/1;" : [0b1],
+    class Helper:
+        @lru_cache(maxsize=None)
+        def generate_nonogram_descriptions(l):
+            def partition(n):
+                if n == 0:
+                    return [[]]
+                partitions = []
+                for p in partition(n-1):
+                    partitions.append(p + [1])
+                    if p and (len(p) < 2 or p[1] > p[0]):
+                        partitions.append([p[0] + 1] + p[1:])
+                return partitions
+            
+            descriptions = partition(l)
+            for i in range(1, l):
+                descriptions += [d + [0] * (l - sum(d)) for d in partition(i)]
+            return sorted(descriptions, key=lambda d: (-len(d), d))
 
-                # l = 2
-                "2/0;" : [0b00],
-                "2/1;" : [0b01,0b10],
-                "2/2;" : [0b11],
+        def generate_bitstrings(l):
+            return list(range(2**l))
 
-                # l = 3
-                "3/0;" : [0b000],
-                "3/1;" : [0b100, 0b010,0b001],
-                "3/2;" : [0b110,0b011],
-                "3/3;" : [0b111],
-                "3/1;1;" : [0b101],
+        def match_description(bitstring, description):
+            i = 0
+            for d in description:
+                group_length = 0
+                while i < len(bitstring) and bitstring[i] == '1':
+                    group_length += 1
+                    i += 1
+                if group_length != d:
+                    return False
+                while i < len(bitstring) and bitstring[i] == '0':
+                    i += 1
+            return i == len(bitstring)
 
-                # l = 4
-                "4/0;" : [0b0000],
-                "4/1;" : [0b1000,0b0100, 0b0010,0b0001],
-                "4/2;" : [0b1100,0b0110,0b0011],
-                "4/3;" : [0b1110,0b0111],
-                "4/4;" : [0b1111],
-                "4/1;1;" : [0b1010,0b0101,0b1001],
-                "4/2;1;" : [0b1101],
-                "4/1;2;" : [0b1011],
-                # l = 5
-                "5/0;" : [0b00000],
-                "5/1;" : [0b10000,0b01000,0b00100,0b00010,0b00001],
-                "5/2;" : [0b11000,0b01100,0b00110, 0b00011],
-                "5/3;" : [0b11100,0b01110,0b00111],
-                "5/4;" : [0b11110,0b01111],
-                "5/5;" : [0b11111],
-                "5/1;1;" : [0b10100,0b10010,0b10001,0b01010,0b01001,0b00101],
-                "5/1;2;" : [0b10011,0b10110,0b01011],
-                "5/1;3;" : [0b10111],
-                "5/2;1;" : [0b11001,0b11010,0b01101,],
-                "5/2;2;" : [0b11011],
-                "5/3;1;" : [0b11101],
-                "5/1;1;1;" : [0b10101],
-            }
-    
+        def generate_valid_bitstrings(l, d):
+            bitstrings = generate_bitstrings(l)
+            valid_bitstrings = [b for b in bitstrings if match_description(f'{b:0{l}b}', d)]
+            return valid_bitstrings
     def __init__(self, nonogram: NonogramPuzzle):
         self.nonogram = nonogram
         # TODO: Fix assumption that num_solutions = 1
@@ -74,39 +72,48 @@ class Quantum(Algorithm):
         # TODO: Monkeypatch, to be fixed 
         for res in top:
             return res
-        
+    
     def to_boolean_expression(self):
-        # TODO: handle cases with a 0 clue
         boolean_statement = ""
 
         # iterate over row constraints
         for row_idx, row in enumerate(self.nonogram.cells):
-            bit_strings = self.possible_d[f"{self.nonogram.columns}/{';'.join(map(str, self.nonogram.row_clues[row_idx]))};"]
-            clauses = []
-            for bitstring in bit_strings:
-                clause = ""
-                for column_idx, cell in enumerate(row):
-                    if bitstring & (1 << column_idx):
-                        clause += f'v{cell.id}&'
-                    else:
-                        clause += f'~v{cell.id}&'
-                clauses.append("(" + clause[:-1] + ")")
-            boolean_statement += "(" + "|".join(clauses) + ")&"
+            clues = self.nonogram.row_clues[row_idx]
+            if clues == [0]:
+                clause = "".join(f'~v{cell.id}&' for cell in row)
+                boolean_statement += "(" + clause[:-1] + ")&"
+            else:
+                bit_strings = Helper.generate_valid_bitstrings(self.nonogram.columns, clues)
+                clauses = []
+                for bitstring in bit_strings:
+                    clause = ""
+                    for column_idx, cell in enumerate(row):
+                        if bitstring & (1 << column_idx):
+                            clause += f'v{cell.id}&'
+                        else:
+                            clause += f'~v{cell.id}&'
+                    clauses.append("(" + clause[:-1] + ")")
+                boolean_statement += "(" + "|".join(clauses) + ")&"
 
         # iterate over column constraints
         for column_idx in range(self.nonogram.columns):
-            bit_strings = self.possible_d[f"{self.nonogram.rows}/{';'.join(map(str, self.nonogram.column_clues[column_idx]))};"]
-            clauses = []
-            for bitstring in bit_strings:
-                clause = ""
-                for row_idx, row in enumerate(self.nonogram.cells):
-                    cell = row[column_idx]
-                    if bitstring & (1 << row_idx):
-                        clause += f'v{cell.id}&'
-                    else:
-                        clause += f'~v{cell.id}&'
-                clauses.append("(" + clause[:-1] + ")")
-            boolean_statement += "(" + "|".join(clauses) + ")&"
+            clues = self.nonogram.column_clues[column_idx]
+            if clues == [0]:
+                clause = "".join(f'~v{row[column_idx].id}&' for row in self.nonogram.cells)
+                boolean_statement += "(" + clause[:-1] + ")&"
+            else:
+                bit_strings = Helper.generate_valid_bitstrings(self.nonogram.rows, clues)
+                clauses = []
+                for bitstring in bit_strings:
+                    clause = ""
+                    for row_idx, row in enumerate(self.nonogram.cells):
+                        cell = row[column_idx]
+                        if bitstring & (1 << row_idx):
+                            clause += f'v{cell.id}&'
+                        else:
+                            clause += f'~v{cell.id}&'
+                    clauses.append("(" + clause[:-1] + ")")
+                boolean_statement += "(" + "|".join(clauses) + ")&"
 
         # remove trailing "&" before returning
         return boolean_statement[:-1]
