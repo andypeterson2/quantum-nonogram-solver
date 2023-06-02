@@ -6,4 +6,4 @@ class MockView(Observer):
 
     def update(self, cell: Cell):
         self.cell_state = cell.state
-        print(f'Cell state updated to {cell.state}')
+        print(f'Cell #{cell.id}\'s state updated to {cell.state}')

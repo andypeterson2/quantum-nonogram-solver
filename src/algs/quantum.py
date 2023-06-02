@@ -5,59 +5,49 @@ from qiskit.quantum_info.operators import Operator
 from qiskit.visualization import plot_histogram
 from qiskit.circuit.library import PhaseOracle
 from qiskit.algorithms import Grover, AmplificationProblem
+from src.benchmarking.database import MemoizationDB
 import math
 from functools import lru_cache
+import sqlite3
+import json
+from typing import List, Optional
+import time
 
 class Quantum(Algorithm):
-    class Helper:
-        @lru_cache(maxsize=None)
-        def generate_nonogram_descriptions(l):
-            def partition(n):
-                if n == 0:
-                    return [[]]
-                partitions = []
-                for p in partition(n-1):
-                    partitions.append(p + [1])
-                    if p and (len(p) < 2 or p[1] > p[0]):
-                        partitions.append([p[0] + 1] + p[1:])
-                return partitions
-            
-            descriptions = partition(l)
-            for i in range(1, l):
-                descriptions += [d + [0] * (l - sum(d)) for d in partition(i)]
-            return sorted(descriptions, key=lambda d: (-len(d), d))
+    name = 'Quantum'
+    class BitStringGenerator:
+        def __init__(self, memo_db: MemoizationDB):
+            self.memo_db = memo_db
 
-        def generate_bitstrings(l):
-            return list(range(2**l))
+        def generate_strings_rec(self, d, l, idx, current, remaining):
+            if idx == len(d):
+                if remaining >= 0:
+                    yield current + [0] * remaining
+                return
+            for zeros in range(1 if idx > 0 else 0, remaining - d[idx] + 1):
+                yield from self.generate_strings_rec(d, l, idx + 1, current + [0] * zeros + [1] * d[idx], remaining - zeros - d[idx])
 
-        def match_description(bitstring, description):
-            i = 0
-            for d in description:
-                group_length = 0
-                while i < len(bitstring) and bitstring[i] == '1':
-                    group_length += 1
-                    i += 1
-                if group_length != d:
-                    return False
-                while i < len(bitstring) and bitstring[i] == '0':
-                    i += 1
-            return i == len(bitstring)
+        def generate_valid_bitstrings(self, l: int, d: List[int]) -> List[str]:
+            result = self.memo_db.get_result(l, d)
+            if result is None:
+                result = [''.join(map(str, b)) for b in self.generate_strings_rec(d, l, 0, [], l)]
+                self.memo_db.store_result(l, d, result)
+            return result
 
-        def generate_valid_bitstrings(l, d):
-            bitstrings = generate_bitstrings(l)
-            valid_bitstrings = [b for b in bitstrings if match_description(f'{b:0{l}b}', d)]
-            return valid_bitstrings
-    def __init__(self, nonogram: NonogramPuzzle):
+    def __init__(self, nonogram: NonogramPuzzle, memoizeDB):
         self.nonogram = nonogram
+        self.generator = self.BitStringGenerator(memoizeDB)
         # TODO: Fix assumption that num_solutions = 1
         self.num_solutions = 1
         self.iterations = math.ceil(math.pi/4 * math.sqrt(2**(nonogram.rows*nonogram.columns)/self.num_solutions))
         expression = self.to_boolean_expression()
-        oracle = PhaseOracle(expression)
+        print("Please wait, this may take a while")
+        oracle = PhaseOracle(expression) # TODO: Fix this bottleneck
         problem = AmplificationProblem(oracle=oracle)
         algorithm = Grover(iterations=self.iterations)
         self.circuit = algorithm.construct_circuit(problem)
         self.circuit.measure_all()
+        self.gate_count = self.circuit.count_ops()
 
     def solve(self, useGPU):
         backend = Aer.get_backend('aer_simulator')
@@ -71,24 +61,24 @@ class Quantum(Algorithm):
         
         # TODO: Monkeypatch, to be fixed 
         for res in top:
-            return res
-    
+            return self.iterations, res, self.circuit.count_ops()
+
     def to_boolean_expression(self):
         boolean_statement = ""
 
         # iterate over row constraints
         for row_idx, row in enumerate(self.nonogram.cells):
-            clues = self.nonogram.row_clues[row_idx]
-            if clues == [0]:
+            clues = self.nonogram.row_clues[row_idx].clues
+            if clues == [0] or clues == []:
                 clause = "".join(f'~v{cell.id}&' for cell in row)
                 boolean_statement += "(" + clause[:-1] + ")&"
             else:
-                bit_strings = Helper.generate_valid_bitstrings(self.nonogram.columns, clues)
+                bit_strings = self.generator.generate_valid_bitstrings(len(row), clues)
                 clauses = []
                 for bitstring in bit_strings:
                     clause = ""
                     for column_idx, cell in enumerate(row):
-                        if bitstring & (1 << column_idx):
+                        if bitstring[column_idx] == '1':
                             clause += f'v{cell.id}&'
                         else:
                             clause += f'~v{cell.id}&'
@@ -97,18 +87,18 @@ class Quantum(Algorithm):
 
         # iterate over column constraints
         for column_idx in range(self.nonogram.columns):
-            clues = self.nonogram.column_clues[column_idx]
+            clues = self.nonogram.column_clues[column_idx].clues
             if clues == [0]:
                 clause = "".join(f'~v{row[column_idx].id}&' for row in self.nonogram.cells)
                 boolean_statement += "(" + clause[:-1] + ")&"
             else:
-                bit_strings = Helper.generate_valid_bitstrings(self.nonogram.rows, clues)
+                bit_strings = self.generator.generate_valid_bitstrings(len(self.nonogram.cells), clues)
                 clauses = []
                 for bitstring in bit_strings:
                     clause = ""
                     for row_idx, row in enumerate(self.nonogram.cells):
                         cell = row[column_idx]
-                        if bitstring & (1 << row_idx):
+                        if bitstring[row_idx] == '1':
                             clause += f'v{cell.id}&'
                         else:
                             clause += f'~v{cell.id}&'

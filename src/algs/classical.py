@@ -2,6 +2,7 @@ from .algorithm import Algorithm
 from src.models.nonogram import NonogramPuzzle
 import numpy as np
 class Classical(Algorithm):
+    name = 'Classical'
     """Classical algorithm for solving nonograms."""
     
     def __init__(self, data):
@@ -22,21 +23,22 @@ class Classical(Algorithm):
             List[np.ndarray]: A list of all valid solutions to the nonogram.
         """
         # Get the number of rows and columns in the nonogram
-        rows, columns = self.data.size
+        rows, columns = self.data.rows, self.data.columns
         
         # Create a list to store all possible solutions
         solutions = []
-        
+        steps = 0
         # Try all possible combinations of filled and empty cells
         for i in range(2**(rows*columns)):
+            steps += 1
             # Convert the current combination to binary
             binary = bin(i)[2:].zfill(rows*columns)
             
             # Convert the binary representation to a 2D array
             board = np.array([int(b) for b in binary]).reshape((rows, columns))
-            
+            self.data.propose_solution(board)
             # Check if the current combination is a valid solution
-            if self.data.validate_solution(board):
+            if self.data.validate_solution():
                 solutions.append(board)
                 
                 # Exit on first found solution if requested
@@ -44,7 +46,7 @@ class Classical(Algorithm):
                     break
         
         # Return all valid solutions
-        return solutions
+        return steps, solutions
     
     def is_valid_solution(self, data: NonogramPuzzle, board: np.ndarray):
         """Check if the given solution is valid according to the constraints of the nonogram.

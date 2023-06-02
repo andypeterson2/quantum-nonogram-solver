@@ -1,5 +1,6 @@
 from .nonogram import NonogramPuzzle
 from .cell import Cell
+from .cluebox import ClueBox
 from random import choice
 
 class NonogramBuilder:
@@ -46,40 +47,55 @@ class NonogramBuilder:
         cells = [[Cell(False) for _ in range(self.columns)] for _ in range(self.rows)]
         self._assign_ids(cells)
         return cells
-    
-    # Misc methods
+
     def generate_clues_from_cells(self):
         # Create row clues
-        row_clues = []
-        for row in self.cells:
-            clue = []
-            count = 0
-            for cell in row:
-                if cell.state:
-                    count += 1
-                elif count > 0:
-                    clue.append(count)
-                    count = 0
-            if count > 0:
-                clue.append(count)
-            row_clues.append(clue)
+        row_clues = [ClueBox(row, []) for row in self.cells]
+
+        for row_clue in row_clues:
+            row_clue.clues = row_clue.calculate_clues()
 
         # Create column clues
-        column_clues = []
-        for column in zip(*self.cells):
-            clue = []
-            count = 0
-            for cell in column:
-                if cell.state:
-                    count += 1
-                elif count > 0:
-                    clue.append(count)
-                    count = 0
-            if count > 0:
-                clue.append(count)
-            column_clues.append(clue)
+        column_clues = [ClueBox(list(column), []) for column in zip(*self.cells)]
+
+        for column_clue in column_clues:
+            column_clue.clues = column_clue.calculate_clues()
 
         return row_clues, column_clues
+
+#     # Misc methods
+#     def generate_clues_from_cells(self):
+#         # Create row clues
+#         row_clues = []
+#         for row in self.cells:
+#             clue = []
+#             count = 0
+#             for cell in row:
+#                 if cell.state:
+#                     count += 1
+#                 elif count > 0:
+#                     clue.append(count)
+#                     count = 0
+#             if count > 0:
+#                 clue.append(count)
+#             row_clues.append(clue)
+
+#         # Create column clues
+#         column_clues = []
+#         for column in zip(*self.cells):
+#             clue = []
+#             count = 0
+#             for cell in column:
+#                 if cell.state:
+#                     count += 1
+#                 elif count > 0:
+#                     clue.append(count)
+#                     count = 0
+#             if count > 0:
+#                 clue.append(count)
+#             column_clues.append(clue)
+
+#         return row_clues, column_clues
     
     def _assign_ids(self, cells):
         id_counter = 1
