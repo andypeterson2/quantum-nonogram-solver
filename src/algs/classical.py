@@ -46,7 +46,7 @@ class Classical(Algorithm):
                     break
         
         # Return all valid solutions
-        return steps, solutions
+        return steps, solutions, 0
     
     def is_valid_solution(self, data: NonogramPuzzle, board: np.ndarray):
         """Check if the given solution is valid according to the constraints of the nonogram.

@@ -50,8 +50,8 @@ class MetricsDatabase:
             print(f"Failed to connect to the database due to {str(e)}")
 
     def create_benchmark_metrics(self, data: BenchmarkMetrics):
-        query = "INSERT INTO BenchmarkMetrics (id, puzzle_size, algorithm, steps, time, gates) VALUES (?, ?, ?, ?, ?, ?)"
-        self.cursor.execute(query, (data.id, data.puzzle_size, data.algorithm, data.steps, data.time, data.gates))
+        query = "INSERT INTO BenchmarkMetrics (puzzle_size, algorithm, steps, time, gates) VALUES (?, ?, ?, ?, ?)"
+        self.cursor.execute(query, (data.puzzle_size, data.algorithm, data.steps, data.time, data.gates))
         self.conn.commit()
         return data
 

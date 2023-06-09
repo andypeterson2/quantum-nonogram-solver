@@ -11,9 +11,9 @@ class TimeBenchmark(Benchmark):
     def __init__(self, solver):
         self.solver = solver
 
-    def run(self):
+    def run(self, useGPU):
         start_time = time.time()
-        steps, _ = self.solver.solve(False)
+        steps, _, gates = self.solver.solve(useGPU)
         end_time = time.time()
         time_taken = end_time - start_time
         return BenchmarkMetrics(
@@ -21,4 +21,5 @@ class TimeBenchmark(Benchmark):
             algorithm=self.solver.algorithm.name,
             steps=steps,
             time=time_taken,
+            gates=gates
         )

@@ -61,7 +61,7 @@ class Quantum(Algorithm):
         
         # TODO: Monkeypatch, to be fixed 
         for res in top:
-            return self.iterations, res, self.circuit.count_ops()
+            return self.iterations, res, self.circuit.size()
 
     def to_boolean_expression(self):
         boolean_statement = ""
